@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-04-2025 a las 14:39:19
+-- Tiempo de generación: 17-04-2025 a las 18:46:28
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -44,8 +44,7 @@ CREATE TABLE `compra` (
   `fecha` date NOT NULL,
   `monto` decimal(10,0) NOT NULL,
   `Usuario_idUsuario` int(11) NOT NULL,
-  `Proveedor_idProveedor` int(11) NOT NULL,
-  `Inventario_idInventario` int(11) NOT NULL
+  `Proveedor_idProveedor` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -62,19 +61,6 @@ CREATE TABLE `compra_has_producto` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `empresaproveedor`
---
-
-CREATE TABLE `empresaproveedor` (
-  `idEmpesa` int(11) NOT NULL,
-  `nombre` varchar(45) NOT NULL,
-  `correo` varchar(45) NOT NULL,
-  `telefono` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `inventario`
 --
 
@@ -82,7 +68,8 @@ CREATE TABLE `inventario` (
   `idInventario` int(11) NOT NULL,
   `cantidad` int(11) NOT NULL,
   `fechaRegistro` date NOT NULL,
-  `stockMinimo` int(11) NOT NULL
+  `stockMinimo` int(11) NOT NULL,
+  `Producto_idProducto` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -121,6 +108,7 @@ CREATE TABLE `pago` (
 CREATE TABLE `pedido` (
   `idPedido` int(11) NOT NULL,
   `total` decimal(10,0) NOT NULL,
+  `estado` tinyint(4) NOT NULL,
   `Usuario_idUsuario` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -144,9 +132,9 @@ CREATE TABLE `pedido_has_producto` (
 CREATE TABLE `producto` (
   `idProducto` int(11) NOT NULL,
   `nombre` varchar(45) NOT NULL,
+  `descripcion` varchar(45) NOT NULL,
   `precio` decimal(30,0) NOT NULL,
   `imagen` tinyblob NOT NULL,
-  `Inventario_idInventario` int(11) NOT NULL,
   `Categoria_idCategoria` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -160,8 +148,7 @@ CREATE TABLE `proveedor` (
   `idProveedor` int(11) NOT NULL,
   `nombre` varchar(45) NOT NULL,
   `contacto` int(11) NOT NULL,
-  `estado` tinyint(4) NOT NULL,
-  `empresaProveedor_idEmpesa` int(11) NOT NULL
+  `estado` tinyint(4) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -220,8 +207,7 @@ ALTER TABLE `categoria`
 ALTER TABLE `compra`
   ADD PRIMARY KEY (`idCompra`),
   ADD KEY `fk_Compra_Usuario1_idx` (`Usuario_idUsuario`),
-  ADD KEY `fk_Compra_Proveedor1_idx` (`Proveedor_idProveedor`),
-  ADD KEY `fk_Compra_Inventario1_idx` (`Inventario_idInventario`);
+  ADD KEY `fk_Compra_Proveedor1_idx` (`Proveedor_idProveedor`);
 
 --
 -- Indices de la tabla `compra_has_producto`
@@ -232,16 +218,11 @@ ALTER TABLE `compra_has_producto`
   ADD KEY `fk_Compra_has_Producto_Compra1_idx` (`Compra_idCompra`);
 
 --
--- Indices de la tabla `empresaproveedor`
---
-ALTER TABLE `empresaproveedor`
-  ADD PRIMARY KEY (`idEmpesa`);
-
---
 -- Indices de la tabla `inventario`
 --
 ALTER TABLE `inventario`
-  ADD PRIMARY KEY (`idInventario`);
+  ADD PRIMARY KEY (`idInventario`),
+  ADD KEY `fk_Inventario_Producto1_idx` (`Producto_idProducto`);
 
 --
 -- Indices de la tabla `movimiento`
@@ -277,15 +258,13 @@ ALTER TABLE `pedido_has_producto`
 --
 ALTER TABLE `producto`
   ADD PRIMARY KEY (`idProducto`),
-  ADD KEY `fk_Producto_Inventario1_idx` (`Inventario_idInventario`),
   ADD KEY `fk_Producto_Categoria1_idx` (`Categoria_idCategoria`);
 
 --
 -- Indices de la tabla `proveedor`
 --
 ALTER TABLE `proveedor`
-  ADD PRIMARY KEY (`idProveedor`),
-  ADD KEY `fk_Proveedor_empresaProveedor1_idx` (`empresaProveedor_idEmpesa`);
+  ADD PRIMARY KEY (`idProveedor`);
 
 --
 -- Indices de la tabla `rol`
@@ -315,7 +294,6 @@ ALTER TABLE `usuario`
 -- Filtros para la tabla `compra`
 --
 ALTER TABLE `compra`
-  ADD CONSTRAINT `fk_Compra_Inventario1` FOREIGN KEY (`Inventario_idInventario`) REFERENCES `inventario` (`idInventario`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   ADD CONSTRAINT `fk_Compra_Proveedor1` FOREIGN KEY (`Proveedor_idProveedor`) REFERENCES `proveedor` (`idProveedor`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   ADD CONSTRAINT `fk_Compra_Usuario1` FOREIGN KEY (`Usuario_idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
@@ -325,6 +303,12 @@ ALTER TABLE `compra`
 ALTER TABLE `compra_has_producto`
   ADD CONSTRAINT `fk_Compra_has_Producto_Compra1` FOREIGN KEY (`Compra_idCompra`) REFERENCES `compra` (`idCompra`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   ADD CONSTRAINT `fk_Compra_has_Producto_Producto1` FOREIGN KEY (`Producto_idProducto`) REFERENCES `producto` (`idProducto`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+--
+-- Filtros para la tabla `inventario`
+--
+ALTER TABLE `inventario`
+  ADD CONSTRAINT `fk_Inventario_Producto1` FOREIGN KEY (`Producto_idProducto`) REFERENCES `producto` (`idProducto`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
 -- Filtros para la tabla `movimiento`
@@ -355,14 +339,7 @@ ALTER TABLE `pedido_has_producto`
 -- Filtros para la tabla `producto`
 --
 ALTER TABLE `producto`
-  ADD CONSTRAINT `fk_Producto_Categoria1` FOREIGN KEY (`Categoria_idCategoria`) REFERENCES `categoria` (`idCategoria`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  ADD CONSTRAINT `fk_Producto_Inventario1` FOREIGN KEY (`Inventario_idInventario`) REFERENCES `inventario` (`idInventario`) ON DELETE NO ACTION ON UPDATE NO ACTION;
-
---
--- Filtros para la tabla `proveedor`
---
-ALTER TABLE `proveedor`
-  ADD CONSTRAINT `fk_Proveedor_empresaProveedor1` FOREIGN KEY (`empresaProveedor_idEmpesa`) REFERENCES `empresaproveedor` (`idEmpesa`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+  ADD CONSTRAINT `fk_Producto_Categoria1` FOREIGN KEY (`Categoria_idCategoria`) REFERENCES `categoria` (`idCategoria`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
 -- Filtros para la tabla `tipopago`
